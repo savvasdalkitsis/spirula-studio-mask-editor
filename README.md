@@ -7,6 +7,9 @@
 
 **Spirula Mask Studio** is a fast, interactive web-based mask editor specifically designed for video frame sequences, camera rigs, NeRF, and 3D Gaussian Splatting (3DGS) datasets. It provides a fluid, responsive workflow for inspecting, drawing, and cleaning up binary segmentation masks across thousands of high-resolution (up to 8K) frames.
 
+> [!NOTE]
+> **Disclosure:** This app was 100% vibe coded for personal use and is shared as is in case people find it interesting.
+
 ---
 
 ## 📸 Interface Preview
