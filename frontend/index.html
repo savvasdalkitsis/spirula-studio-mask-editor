@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spirula Mask Studio</title>
+  <link rel="stylesheet" href="style.css?v=2.0.0" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎭</text></svg>" />
+</head>
+<body>
+  <div id="app">
+    <!-- Top Header -->
+    <header id="top-bar">
+      <div class="header-left">
+        <div class="brand">
+          <span class="brand-icon">🎭</span>
+          <span class="brand-title">Spirula Mask Studio</span>
+          <span class="badge version-badge">v1.0</span>
+        </div>
+
+        <div class="dataset-control">
+          <label for="sequence-select" class="control-label">Sequence:</label>
+          <select id="sequence-select" title="Select Video Sequence">
+            <option value="">Loading sequences...</option>
+          </select>
+          <button id="btn-refresh-seq" class="btn btn-icon" title="Refresh Sequences">🔄</button>
+          <button id="btn-dataset-path" class="btn btn-sm btn-ghost" title="Change Dataset Path">📁 Path</button>
+        </div>
+      </div>
+
+      <!-- Playback & Navigation Center -->
+      <div class="header-center">
+        <div class="playback-bar">
+          <button id="btn-first" class="btn btn-icon" title="First Frame (Home)">⏮</button>
+          <button id="btn-prev" class="btn btn-icon" title="Previous Frame (Left Arrow / A)">◀</button>
+          <button id="btn-play" class="btn btn-icon btn-play" title="Play / Pause Slideshow (Space)">▶</button>
+          <button id="btn-next" class="btn btn-icon" title="Next Frame (Right Arrow / D)">▶</button>
+          <button id="btn-last" class="btn btn-icon" title="Last Frame (End)">⏭</button>
+
+          <div class="frame-counter">
+            <input type="number" id="frame-input" min="1" value="1" />
+            <span class="frame-total">/ <span id="total-frames">0</span></span>
+          </div>
+
+          <div class="fps-control">
+            <label for="fps-select">FPS:</label>
+            <select id="fps-select">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+              <option value="24">24</option>
+              <option value="30">30</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status & Save Right -->
+      <div class="header-right">
+        <div class="status-indicators">
+          <span id="mask-status-badge" class="badge badge-missing">No Mask</span>
+          <span id="save-status-badge" class="badge badge-saved">Saved</span>
+        </div>
+
+        <button id="btn-save" class="btn btn-primary" title="Save Mask (Ctrl+S)">
+          💾 Save Mask
+        </button>
+
+        <label class="toggle-switch" title="Automatically save mask when switching frames">
+          <input type="checkbox" id="auto-save-toggle" checked />
+          <span class="slider"></span>
+          <span class="toggle-label">Auto-Save</span>
+        </label>
+
+        <button id="btn-help" class="btn btn-icon btn-ghost" title="Keyboard Shortcuts (?)">❓</button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <div id="workspace">
+      <!-- Left Toolbar (Painting & Viewing Tools) -->
+      <aside id="left-toolbar">
+        <!-- View Mode Switcher -->
+        <div class="tool-section">
+          <div class="tool-section-title">View Mode</div>
+          <div class="btn-group-vertical">
+            <button id="btn-mode-overlay" class="btn btn-tool active" title="Overlay View (Q)">
+              <span class="tool-icon">⧉</span> Overlay (Q)
+            </button>
+            <button id="btn-mode-mask" class="btn btn-tool" title="Mask Only View (E)">
+              <span class="tool-icon">⬛</span> Mask Only (E)
+            </button>
+            <button id="btn-mode-side" class="btn btn-tool" title="Side-by-Side View (O)">
+              <span class="tool-icon">◫</span> Side by Side
+            </button>
+          </div>
+        </div>
+
+        <!-- Painting & Fill Tools -->
+        <div class="tool-section">
+          <div class="tool-section-title">Edit Tools</div>
+          <div class="btn-group-vertical">
+            <button id="tool-brush" class="btn btn-tool active" title="Brush (Left Click: Paint Mask, Right Click: Clear Mask)">
+              <span class="tool-icon">🖌️</span> Brush (L: Paint, R: Clear)
+            </button>
+            <button id="tool-fill-out" class="btn btn-tool" title="Fill Mask (3)">
+              <span class="tool-icon" style="color: #ef4444;">🪣</span> Fill Mask (3)
+            </button>
+            <button id="tool-fill-in" class="btn btn-tool" title="Fill Clear Mask (4)">
+              <span class="tool-icon" style="color: #10b981;">🪣</span> Fill Clear (4)
+            </button>
+          </div>
+        </div>
+
+        <!-- Brush Settings -->
+        <div class="tool-section">
+          <div class="tool-section-title">Brush Size: <span id="brush-size-val">40</span>px</div>
+          <input type="range" id="brush-size-slider" min="2" max="400" value="40" />
+          <div class="brush-presets">
+            <button class="btn btn-xs preset-btn" data-size="10">10</button>
+            <button class="btn btn-xs preset-btn" data-size="25">25</button>
+            <button class="btn btn-xs preset-btn" data-size="50">50</button>
+            <button class="btn btn-xs preset-btn" data-size="100">100</button>
+            <button class="btn btn-xs preset-btn" data-size="200">200</button>
+          </div>
+        </div>
+
+        <!-- Overlay Settings -->
+        <div class="tool-section">
+          <div class="tool-section-title">Overlay Settings</div>
+          <div class="control-row">
+            <label for="overlay-opacity">Opacity: <span id="opacity-val">50%</span></label>
+            <input type="range" id="overlay-opacity" min="0" max="100" value="50" />
+          </div>
+
+          <div class="control-row">
+            <label>Color:</label>
+            <div class="color-swatches">
+              <button class="color-swatch active" data-color="#ef4444" style="background:#ef4444;" title="Red"></button>
+              <button class="color-swatch" data-color="#10b981" style="background:#10b981;" title="Green"></button>
+              <button class="color-swatch" data-color="#3b82f6" style="background:#3b82f6;" title="Blue"></button>
+              <button class="color-swatch" data-color="#f59e0b" style="background:#f59e0b;" title="Amber"></button>
+              <button class="color-swatch" data-color="#ec4899" style="background:#ec4899;" title="Pink"></button>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label class="checkbox-label" title="Highlight valid region (255) instead of masked out region (0)">
+              <input type="checkbox" id="invert-view-toggle" />
+              <span>Invert View</span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <button id="btn-flash-mask" class="btn btn-sm btn-ghost w-100" title="Hold Tab to peek Mask in Overlay or Overlay in Mask">
+              👁️ Peek View (Tab)
+            </button>
+          </div>
+        </div>
+
+        <!-- Zoom Controls -->
+        <div class="tool-section">
+          <div class="tool-section-title">Zoom: <span id="zoom-val">Fit</span></div>
+          <div class="zoom-btn-row">
+            <button id="btn-zoom-in" class="btn btn-xs" title="Zoom In (+)">➕</button>
+            <button id="btn-zoom-out" class="btn btn-xs" title="Zoom Out (-)">➖</button>
+            <button id="btn-zoom-fit" class="btn btn-xs" title="Fit to Screen (F / 0)">Fit</button>
+            <button id="btn-zoom-100" class="btn btn-xs" title="100% 1:1 Pixels">1:1</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Viewport Canvas Container -->
+      <main id="viewport-container">
+        <!-- Single / Overlay Viewport -->
+        <div id="single-viewport" class="viewport-pane active">
+          <canvas id="main-canvas"></canvas>
+          <div id="cursor-indicator" class="brush-cursor"></div>
+        </div>
+
+        <!-- Side-by-Side Viewport -->
+        <div id="side-viewport" class="viewport-pane">
+          <div class="side-panel left-panel">
+            <div class="panel-header">
+              <span>RGB Frame</span>
+              <span id="res-badge-left" class="res-tag"></span>
+            </div>
+            <div class="canvas-wrapper">
+              <canvas id="side-canvas-left"></canvas>
+            </div>
+          </div>
+          <div class="side-divider"></div>
+          <div class="side-panel right-panel">
+            <div class="panel-header">
+              <span>Mask / Overlay</span>
+              <div class="side-right-controls">
+                <select id="side-right-mode">
+                  <option value="overlay">Image + Mask Overlay</option>
+                  <option value="binary" selected>Binary Mask (B&W)</option>
+                </select>
+              </div>
+            </div>
+            <div class="canvas-wrapper">
+              <canvas id="side-canvas-right"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-spinner" class="loading-overlay hidden">
+          <div class="spinner"></div>
+          <div id="loading-text">Loading Frame...</div>
+        </div>
+      </main>
+
+      <!-- Right Panel: Mask Actions & History -->
+      <aside id="right-panel">
+        <div class="panel-section" id="alt-preview-section">
+          <div class="alt-preview-header">
+            <div class="panel-section-title">Preview: <span id="alt-preview-name" style="color: var(--accent-primary, #38bdf8);">Mask</span></div>
+            <span id="alt-preview-tag" class="badge badge-mask">Mask</span>
+          </div>
+          <div id="alt-preview-card" class="alt-preview-card" title="Click to switch view (Q / E)">
+            <canvas id="alt-preview-canvas"></canvas>
+            <div class="alt-preview-hover-hint">Switch (Q/E)</div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title">Current Frame</div>
+          <div class="info-card">
+            <div class="info-row">
+              <span class="info-label">File:</span>
+              <span id="info-filename" class="info-value">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Resolution:</span>
+              <span id="info-res" class="info-value">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Mask State:</span>
+              <span id="info-mask-state" class="info-value">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title">History</div>
+          <div class="history-actions">
+            <button id="btn-undo" class="btn btn-sm btn-ghost" title="Undo (Ctrl+Z)" disabled>
+              ↩ Undo
+            </button>
+            <button id="btn-redo" class="btn btn-sm btn-ghost" title="Redo (Ctrl+Y)" disabled>
+              ↪ Redo
+            </button>
+            <button id="btn-revert" class="btn btn-sm btn-danger-ghost" title="Revert all unsaved changes for this frame">
+              Discard Edits
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title">Frame Operations</div>
+          <div class="btn-group-vertical">
+            <button id="btn-copy-prev" class="btn btn-sm btn-secondary" title="Copy mask from previous frame">
+              📋 Copy from Prev
+            </button>
+            <button id="btn-copy-next" class="btn btn-sm btn-secondary" title="Copy mask from next frame">
+              📋 Copy from Next
+            </button>
+            <button id="btn-invert-mask" class="btn btn-sm btn-secondary" title="Invert 0 and 255 for the entire mask">
+              🔄 Invert Entire Mask
+            </button>
+            <button id="btn-clear-keep" class="btn btn-sm btn-secondary" title="Fill mask with 255 (Keep All) (C)">
+              ⬜ Clear to Keep All (C)
+            </button>
+            <button id="btn-clear-exclude" class="btn btn-sm btn-secondary" title="Fill mask with 0 (Mask All)">
+              ⬛ Clear to Mask All (0)
+            </button>
+            <button id="btn-delete-mask" class="btn btn-sm btn-danger" title="Delete mask file from disk (moves to .trash)">
+              🗑️ Delete Mask File
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title">Resolution & Performance</div>
+          <div class="control-row">
+            <label class="checkbox-label" title="Load full 8K frame. Uncheck for ultra-fast scrubbing/preview.">
+              <input type="checkbox" id="high-res-toggle" />
+              <span>Full 8K Image</span>
+            </label>
+          </div>
+          <div class="help-text">
+            * Masks are always saved at full native resolution.
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Bottom Timeline / Scrubber Bar -->
+    <footer id="timeline-bar">
+      <div class="timeline-controls">
+        <button id="btn-find-missing" class="btn btn-xs btn-ghost" title="Find next frame with missing mask">
+          🔍 Find Missing
+        </button>
+        <span class="timeline-stats">
+          Total: <strong id="stat-total">0</strong> |
+          Masks: <strong id="stat-masks" class="text-success">0</strong> |
+          Missing: <strong id="stat-missing" class="text-danger">0</strong>
+        </span>
+      </div>
+      <div class="timeline-slider-wrap">
+        <input type="range" id="timeline-slider" min="0" max="0" value="0" />
+        <canvas id="timeline-canvas" height="8"></canvas>
+      </div>
+      <div class="timeline-coords">
+        <span id="coords-display">X: 0, Y: 0</span>
+      </div>
+    </footer>
+
+    <!-- Shortcuts & Help Modal -->
+    <div id="help-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Keyboard Shortcuts & Tips</h3>
+          <button id="btn-close-modal" class="btn btn-icon btn-ghost">✕</button>
+        </div>
+        <div class="modal-body">
+          <table class="shortcuts-table">
+            <tr><td><kbd>Left</kbd> / <kbd>A</kbd></td><td>Previous Frame</td></tr>
+            <tr><td><kbd>Right</kbd> / <kbd>D</kbd></td><td>Next Frame</td></tr>
+            <tr><td><kbd>Space</kbd></td><td>Play / Pause slideshow (or Pan when dragging)</td></tr>
+            <tr><td><kbd>Left Click</kbd></td><td>Paint Mask (0, Exclude)</td></tr>
+            <tr><td><kbd>Right Click</kbd></td><td>Clear Mask (255, Include)</td></tr>
+            <tr><td><kbd>3</kbd></td><td>Fill Tool: Fill Mask (0)</td></tr>
+            <tr><td><kbd>4</kbd></td><td>Fill Tool: Fill Clear Mask (255)</td></tr>
+            <tr><td><kbd>R</kbd> (Hold)</td><td>Half Brush Radius (Fine Detailing)</td></tr>
+            <tr><td><kbd>Q</kbd></td><td>View Mode: Overlay</td></tr>
+            <tr><td><kbd>E</kbd></td><td>View Mode: Mask Only</td></tr>
+            <tr><td><kbd>O</kbd></td><td>Toggle Side-by-Side View</td></tr>
+            <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>Decrease / Increase Brush Size</td></tr>
+            <tr><td><kbd>Scroll</kbd></td><td>Zoom into cursor position</td></tr>
+            <tr><td><kbd>Space</kbd> + <kbd>Drag</kbd></td><td>Pan around viewport</td></tr>
+            <tr><td><kbd>F</kbd> or <kbd>0</kbd></td><td>Zoom Fit to Window</td></tr>
+            <tr><td><kbd>Tab</kbd></td><td>Peek Mask in Overlay / Peek Overlay in Mask (hold & release)</td></tr>
+            <tr><td><kbd>Shift</kbd> + <kbd>Tab</kbd></td><td>Peek Raw Image (hide mask / overlay)</td></tr>
+            <tr><td><kbd>C</kbd></td><td>Clear to Keep All (255)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>Undo brush stroke</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Y</kbd></td><td>Redo</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td>Save Mask</td></tr>
+          </table>
+          <div class="modal-footer-tip">
+            💡 <strong>Spirula Convention:</strong> 255 (White) is kept scene, 0 (Black/Tint) is masked out. Masked out areas are highlighted in red by default.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dataset Path & File Chooser Modal -->
+    <div id="path-modal" class="modal hidden">
+      <div class="modal-content modal-lg">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-icon">📁</span>
+            <h3>Choose Dataset Directory</h3>
+          </div>
+          <button id="btn-close-path-modal" class="btn btn-icon btn-ghost" title="Close">✕</button>
+        </div>
+        <div class="modal-body file-chooser-body">
+          <!-- Quick Roots / Shortcuts Bar -->
+          <div class="chooser-roots" id="chooser-roots">
+            <span class="roots-label">Shortcuts:</span>
+            <div class="roots-list" id="roots-list"></div>
+          </div>
+
+          <!-- Breadcrumb Navigation Bar -->
+          <div class="chooser-nav">
+            <button id="btn-chooser-up" class="btn btn-sm btn-ghost" title="Go up to parent folder">⬆ Up</button>
+            <button id="btn-chooser-refresh" class="btn btn-sm btn-ghost" title="Refresh directory">🔄</button>
+            <div class="chooser-breadcrumbs" id="chooser-breadcrumbs"></div>
+          </div>
+
+          <!-- Directory List -->
+          <div class="chooser-list-container">
+            <div id="chooser-list" class="chooser-list">
+              <div class="chooser-loading">Loading directories...</div>
+            </div>
+          </div>
+
+          <!-- Selection & Status Bar -->
+          <div class="chooser-footer-info">
+            <div class="selected-path-row">
+              <span class="path-label">Selected:</span>
+              <input type="text" id="dataset-path-input" class="text-input" spellcheck="false" />
+            </div>
+            <div id="chooser-dataset-indicator" class="dataset-indicator hidden">
+              ✓ Dataset detected (<code>images/</code> folder found)
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button id="btn-cancel-path" class="btn btn-ghost">Cancel</button>
+            <button id="btn-save-path" class="btn btn-primary">Select This Directory</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js?v=2.0.0"></script>
+</body>
+</html>
