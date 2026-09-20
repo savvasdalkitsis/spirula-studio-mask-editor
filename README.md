@@ -154,7 +154,22 @@ Multi-dataset parent directories (e.g. `/datasets/scene_a/images/...` and `/data
 
 ### Running with Docker
 
-You can easily build and run Spirula Mask Studio with Docker:
+#### Pull from GitHub Container Registry (Recommended)
+
+You can run the pre-built multi-arch container directly without cloning or building:
+
+```bash
+docker run -d \
+  --name spirula-mask-studio \
+  -p 8000:8000 \
+  -v /path/to/your/dataset:/data \
+  -v /path/to/cache:/cache/previews \
+  -e DATASET_ROOT=/data \
+  -e CACHE_DIR=/cache \
+  ghcr.io/savvasdalkitsis/spirula-studio-mask-editor:latest
+```
+
+#### Or Build and Run Locally
 
 ```bash
 # Build the Docker image
